@@ -66,6 +66,8 @@ namespace nil {
             std::size_t next_selector_index = 0;
 
             std::uint32_t _allocated_rows = 0;
+
+            std::vector<uint32_t> _used_witness_cols;
         public:
 
             assignment() :
@@ -110,6 +112,22 @@ namespace nil {
             }
 
             std::uint32_t allocated_rows() const {
+                return _allocated_rows;
+            }
+
+            std::uint32_t used_witness_cols(const std::size_t idx) const {
+                if (idx >= _used_witness_cols.size()) {
+                    return 0;
+                }
+                return _used_witness_cols[idx];
+            }
+
+            std::uint32_t get_first_free_row(const std::uint32_t witness_amount) const {
+                for (std::size_t i = 0; i < _used_witness_cols.size(); i++) {
+                    if ((_used_witness_cols[i] + witness_amount) < ArithmetizationParams::witness_columns) {
+                        return i;
+                    }
+                }
                 return _allocated_rows;
             }
 
@@ -177,6 +195,11 @@ namespace nil {
                     this->_private_table._witnesses[witness_index].resize(row_index + 1);
 
                 _allocated_rows = std::max(_allocated_rows, row_index + 1);
+                if (_used_witness_cols.size() <= row_index) {
+                    _used_witness_cols.push_back(witness_index + 1);
+                } else {
+                    _used_witness_cols[row_index] = std::max(_used_witness_cols[row_index], witness_index + 1);
+                }
                 return this->_private_table._witnesses[witness_index][row_index];
             }
 
